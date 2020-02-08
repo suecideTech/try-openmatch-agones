@@ -16,6 +16,8 @@ import (
 	sdk "agones.dev/agones/sdks/go"
 )
 
+var connections []net.PacketConn
+
 // main starts a UDP server that received 1024 byte sized packets at at time
 // converts the bytes to a string, and logs the output
 func main() {
@@ -59,18 +61,22 @@ func main() {
 	}
 
 	log.Printf("Starting UDP server, listening on port %s", *port)
-	conn, err := net.ListenPacket("udp", ":"+*port)
-	if err != nil {
-		log.Fatalf("Could not start udp server: %v", err)
-	}
-	defer conn.Close() // nolint: errcheck
+	for {
+		conn, err := net.ListenPacket("udp", ":"+*port)
+		if err != nil {
+			log.Fatalf("Could not start udp server: %v", err)
+		}
+		defer conn.Close() // nolint: errcheck
 
-	if *readyOnStart {
-		log.Print("Marking this server as ready")
-		ready(s)
-	}
+		connections = append(connections, conn)
 
-	readWriteLoop(conn, stop, s)
+		if *readyOnStart {
+			log.Print("Marking this server as ready")
+			ready(s)
+		}
+
+		go readWriteLoop(conn, stop, s)
+	}
 }
 
 // doSignal shutsdown on SIGTERM/SIGKILL
@@ -182,8 +188,10 @@ func readPacket(conn net.PacketConn, b []byte) (net.Addr, string) {
 
 // respond responds to a given sender.
 func respond(conn net.PacketConn, sender net.Addr, txt string) {
-	if _, err := conn.WriteTo([]byte(txt), sender); err != nil {
-		log.Fatalf("Could not write to udp stream: %v", err)
+	for _, con := range connections {
+		if _, err := con.WriteTo([]byte(txt), sender); err != nil {
+			log.Fatalf("Could not write to udp stream: %v", err)
+		}
 	}
 }
 
