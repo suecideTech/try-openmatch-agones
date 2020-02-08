@@ -1,0 +1,95 @@
+@startuml
+
+actor Client
+box "OpenMatch" #f0f8ff
+    participant Frontend
+    database StateStore
+    participant Query
+    participant MatchFunction
+    participant Backend
+end box
+participant Director
+participant AllocateService
+box "Agones" #f0f8ff
+    participant GameServerAllocation
+    participant Fleet
+    participant GameServer
+end box
+
+Fleet --> GameServer: Create
+activate GameServer
+GameServer -> GameServer: initialize
+activate GameServer
+GameServer --> GameServer: Agones.SDK.Ready()
+note left : Status: Ready
+return initialized
+
+== End: Initilize GameServer ==
+
+Client -> Frontend: RequestMatch
+activate Frontend
+Frontend -> Frontend: CreateTicket
+Frontend --> StateStore: RegisterTicket
+
+Director -> Director: Triger(Periodically call)
+activate Director
+Director -> Backend: FetchMatches
+activate Backend
+Backend -> MatchFunction: execute
+activate MatchFunction
+MatchFunction -> Query: Fetch
+activate Query
+Query --> StateStore: Fetch
+StateStore --> Query: Tickets
+return Tickets
+MatchFunction -> MatchFunction: Create Match
+return Match
+return Match
+
+Director -> AllocateService: RequestAllocate
+activate AllocateService
+AllocateService -> GameServerAllocation: Create
+activate GameServerAllocation
+GameServerAllocation --> GameServer: Allocate
+note right : Status: Allocated
+return IP / Port
+return IP / Port
+
+Director -> Director: CreateAssignment
+Director -> Backend: SetAssignment
+deactivate Director
+activate Backend
+note left: Set this Assignment on all the Tickets in the Match
+Backend --> StateStore: StoreMatch
+deactivate Backend
+Frontend --> StateStore: GetAssignment
+StateStore --> Frontend: Assignment
+return Assignment
+note left: Include IP / Port
+
+== End: MatchMake ==
+
+Client -> Client: Start Game Session
+activate Client
+Client -> GameServer: Connection
+activate GameServer
+GameServer -> GameServer: Start Game Session
+
+...
+
+Client -> GameServer: End
+GameServer -> Client: End Game Session
+destroy Client
+deactivate Client
+deactivate Client
+GameServer --> GameServer: Agones.SDK.Shutdown()
+GameServer -> GameServer: End Game Session
+note left: Status: Unhealthy
+deactivate GameServer
+
+== End: GamePlay ==
+
+Fleet --> GameServer: Destroy
+destroy GameServer
+
+@enduml
