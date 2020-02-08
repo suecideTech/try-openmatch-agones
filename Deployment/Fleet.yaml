@@ -1,0 +1,23 @@
+apiVersion: "agones.dev/v1"
+kind: Fleet
+metadata:
+  name: simple-udp
+spec:
+  replicas: 2
+  template:
+    spec:
+      ports:
+      - name: default
+        containerPort: 7654
+      template:
+        spec:
+          containers:
+          - name: simple-udp
+            image: localimage/mod_simple-udp:0.1
+            resources:
+              requests:
+                memory: "64Mi"
+                cpu: "20m"
+              limits:
+                memory: "64Mi"
+                cpu: "20m"

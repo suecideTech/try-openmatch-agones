@@ -16,7 +16,7 @@ import (
 	sdk "agones.dev/agones/sdks/go"
 )
 
-var connections []net.PacketConn
+var addrs = map[uint]net.Addr{}
 
 // main starts a UDP server that received 1024 byte sized packets at at time
 // converts the bytes to a string, and logs the output
@@ -61,22 +61,18 @@ func main() {
 	}
 
 	log.Printf("Starting UDP server, listening on port %s", *port)
-	for {
-		conn, err := net.ListenPacket("udp", ":"+*port)
-		if err != nil {
-			log.Fatalf("Could not start udp server: %v", err)
-		}
-		defer conn.Close() // nolint: errcheck
-
-		connections = append(connections, conn)
-
-		if *readyOnStart {
-			log.Print("Marking this server as ready")
-			ready(s)
-		}
-
-		go readWriteLoop(conn, stop, s)
+	conn, err := net.ListenPacket("udp", ":"+*port)
+	if err != nil {
+		log.Fatalf("Could not start udp server: %v", err)
 	}
+	defer conn.Close() // nolint: errcheck
+
+	if *readyOnStart {
+		log.Print("Marking this server as ready")
+		ready(s)
+	}
+
+	readWriteLoop(conn, stop, s)
 }
 
 // doSignal shutsdown on SIGTERM/SIGKILL
@@ -91,6 +87,12 @@ func readWriteLoop(conn net.PacketConn, stop chan struct{}, s *sdk.SDK) {
 	b := make([]byte, 1024)
 	for {
 		sender, txt := readPacket(conn, b)
+
+		switch addr := sender.(type) {
+		case *net.UDPAddr:
+			addrs[uint(addr.Port)] = addr
+		}
+
 		parts := strings.Split(strings.TrimSpace(txt), " ")
 
 		switch parts[0] {
@@ -188,8 +190,8 @@ func readPacket(conn net.PacketConn, b []byte) (net.Addr, string) {
 
 // respond responds to a given sender.
 func respond(conn net.PacketConn, sender net.Addr, txt string) {
-	for _, con := range connections {
-		if _, err := con.WriteTo([]byte(txt), sender); err != nil {
+	for _, sendaddr := range addrs {
+		if _, err := conn.WriteTo([]byte(txt), sendaddr); err != nil {
 			log.Fatalf("Could not write to udp stream: %v", err)
 		}
 	}
