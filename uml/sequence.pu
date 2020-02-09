@@ -7,8 +7,8 @@ box "OpenMatch" #f0f8ff
     participant Query
     participant MatchFunction
     participant Backend
+    participant Director
 end box
-participant Director
 participant AllocateService
 box "Agones" #f0f8ff
     participant GameServerAllocation
