@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: mod_frontend
+  namespace: openmatch
+spec:
+  containers:
+  - name: mod_frontend
+    image: localimage/mod_frontend:0.1
+    imagePullPolicy: Never
+  hostname: mod_frontend
