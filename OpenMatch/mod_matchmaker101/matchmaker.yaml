@@ -1,0 +1,64 @@
+# This file contains the sample minimal pod definitions for all of the components that one may need to use Open Match as a match maker.
+# You can find the same pod definitions within the sub-folders under the /tutorials/ mod_directory
+# Run `kubectl apply -f matchmaker.yaml` to deploy these definitions.
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: mod_director
+  namespace: openmatch
+spec:
+  containers:
+  - name: mod_director
+    image: localimage/mod_mod_director:0.1
+    imagePullPolicy: Never
+  hostname: mod_director
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: mod_frontend
+  namespace: openmatch
+spec:
+  containers:
+  - name: mod_frontend
+    image: localimage/mod_frontend:0.1
+    imagePullPolicy: Never
+  hostname: mod_frontend
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: mod_matchfunction
+  namespace: openmatch
+  labels:
+    app: openmatch
+    component: mod_matchfunction
+spec:
+  containers:
+  - name: mod_matchfunction
+    image: localimage/mod_matchfunction:0.1
+    imagePullPolicy: Never
+    ports:
+    - name: grpc
+      containerPort: 50502
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: mod_matchfunction
+  namespace: openmatch
+  labels:
+    app: openmatch
+    component: mod_matchfunction
+spec:
+  selector:
+    app: openmatch
+    component: mod_matchfunction
+  clusterIP: None
+  type: ClusterIP
+  ports:
+  - name: grpc
+    protocol: TCP
+    port: 50502
+---

@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: mod_director
+  namespace: openmatch
+spec:
+  containers:
+  - name: mod_director
+    image: localimage/mod_director:0.1
+    imagePullPolicy: Never
+  hostname: mod_director
