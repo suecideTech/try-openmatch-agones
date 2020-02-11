@@ -37,11 +37,11 @@ const (
 	// The endpoint for the Open Match Backend service.
 	omBackendEndpoint = "om-backend.open-match.svc.cluster.local:50505"
 	// The Host and Port for the Match Function service endpoint.
-	functionHostName       = "mm101-tutorial-matchfunction.mm101-tutorial.svc.cluster.local"
+	functionHostName       = "matchfunction.openmatch.svc.cluster.local"
 	functionPort     int32 = 50502
 
 	// The Host and Port for the AllocateService endpoint.
-	allocateHostName = "http://192.168.99.100:32288/address"
+	allocateHostName = "http://fleet-allocator-endpoint.default.svc.cluster.local/address"
 	allocateKey      = "v1GameClientKey"
 	allocatePass     = "EAEC945C371B2EC361DE399C2F11E"
 )
@@ -60,7 +60,7 @@ func main() {
 	profiles := generateProfiles()
 	log.Printf("Fetching matches for %v profiles", len(profiles))
 
-	for range time.Tick(time.Second * 5) {
+	for range time.Tick(time.Second * 1) {
 		// Fetch matches for each profile and make random assignments for Tickets in
 		// the matches returned.
 		var wg sync.WaitGroup
@@ -74,7 +74,9 @@ func main() {
 					return
 				}
 
-				log.Printf("Generated %v matches for profile %v", len(matches), p.GetName())
+				if len(matchs) > 0 {
+					log.Printf("Generated %v matches for profile %v", len(matches), p.GetName())
+				}
 				if err := assign(be, matches); err != nil {
 					log.Printf("Failed to assign servers to matches, got %s", err.Error())
 					return

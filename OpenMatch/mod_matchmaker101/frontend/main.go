@@ -4,9 +4,9 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/labstack/echo"
@@ -63,6 +63,7 @@ func handleGetMatch(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, matchRes)
 	}
 	t := resp.Ticket
+	log.Printf("Create Ticket: %v", t.GetId())
 
 	// Polling TicketAssignment.
 	for {
@@ -75,7 +76,9 @@ func handleGetMatch(c echo.Context) error {
 		if got.GetAssignment() != nil {
 			log.Printf("Ticket %v got assignment %v", got.GetId(), got.GetAssignment())
 			conn := got.GetAssignment().Connection
-			fmt.Sscanf(conn, "%s:%d", matchRes.IP, matchRes.Port)
+			slice := strings.Split(conn, ":")
+			matchRes.IP = slice[0]
+			matchRes.Port = slice[1]
 			break
 		}
 		time.Sleep(time.Second * 1)
