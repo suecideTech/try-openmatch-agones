@@ -15,8 +15,8 @@ import (
 	"open-match.dev/open-match/pkg/pb"
 )
 
-type MatchResponce struct {
-	Ip   string `json:"ip"`
+type matchResponce struct {
+	IP   string `json:"ip"`
 	Port string `json:"port"`
 }
 
@@ -46,7 +46,7 @@ func main() {
 }
 
 func handleGetMatch(c echo.Context) error {
-	matchRes := new(MatchResponce)
+	matchRes := new(matchResponce)
 	if err := c.Bind(matchRes); err != nil {
 		log.Fatalf("Failed to echo Bind, got %v", err)
 		return c.JSON(http.StatusInternalServerError, matchRes)
@@ -75,7 +75,7 @@ func handleGetMatch(c echo.Context) error {
 		if got.GetAssignment() != nil {
 			log.Printf("Ticket %v got assignment %v", got.GetId(), got.GetAssignment())
 			conn := got.GetAssignment().Connection
-			fmt.Sscanf(conn, "%s:%d", matchRes.Ip, matchRes.Port)
+			fmt.Sscanf(conn, "%s:%d", matchRes.IP, matchRes.Port)
 			break
 		}
 		time.Sleep(time.Second * 1)
