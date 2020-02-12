@@ -1,6 +1,7 @@
 @startuml
 
 actor Client
+participant MatchFrontend
 box "OpenMatch" #f0f8ff
     participant Frontend
     database StateStore
@@ -26,9 +27,9 @@ return initialized
 
 == End: Initilize GameServer ==
 
-Client -> Frontend: RequestMatch
-activate Frontend
-Frontend -> Frontend: CreateTicket
+Client -> MatchFrontend: RequestMatch
+activate MatchFrontend
+MatchFrontend -> Frontend: CreateTicket
 Frontend --> StateStore: RegisterTicket
 
 Director -> Director: Triger(Periodically call)
@@ -62,10 +63,21 @@ activate Backend
 note left: Set this Assignment on all the Tickets in the Match
 Backend --> StateStore: StoreMatch
 deactivate Backend
-Frontend --> StateStore: GetAssignment
-StateStore --> Frontend: Assignment
+
+loop Assignment is not nil
+    MatchFrontend -> Frontend: GetTicket
+    Frontend --> StateStore: GetTicket
+    StateStore --> Frontend: Ticket
+    Frontend -> MatchFrontend: Ticket
+    MatchFrontend -> Frontend: GetAssignment
+    Frontend --> StateStore: GetAssignment
+    StateStore --> Frontend: Assignment
+    Frontend -> MatchFrontend: Assignment
+end
+MatchFrontend -> Frontend: DeleteTicket
+Frontend --> StateStore: DeleteTicket
 return Assignment
-note left: Include IP / Port
+note left of Frontend: Include IP / Port
 
 == End: MatchMake ==
 
